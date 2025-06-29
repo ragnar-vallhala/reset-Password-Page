@@ -2,24 +2,27 @@ import React, { useState, useEffect } from 'react'
 import PaaswordBox from '../components/PaaswordBox'
 import axios from 'axios'
 import toast from 'react-hot-toast'
+import { useLocation } from 'react-router'
 const Homepage = () => {
     const [password, setPassword] = useState('')
     const [confirmPassword, setConfirmPassword] = useState('')
     const [token, setToken] = useState('')
-    const BaseUrl = import.meta.env.BASE_URL
+    const[isSubmitting,setIsSubmitting] = useState(false)
+    const BaseUrl = import.meta.env.VITE_BASE_URL
     
+    const location = useLocation()
     // Extract token from URL when component mounts
     useEffect(() => {
-        const urlParams = new URLSearchParams(window.location.search)
+        const urlParams = new URLSearchParams(location.search)
         const tokenFromUrl = urlParams.get('token')
         if (tokenFromUrl) {
             setToken(tokenFromUrl)
         }
-    }, [])
+    }, [location])
     
     const setResetPassword = async() => {
         if (!token) {
-            toast.error('token not found')
+            toast.error('token not found')        
             return
         }
         
@@ -29,6 +32,7 @@ const Homepage = () => {
         }
         
         try {
+            setIsSubmitting(true)
             const res = await axios.put(`${BaseUrl}/auth/password/reset/${token}`, {
                 password: password,
                 confirmPassword: confirmPassword
@@ -38,6 +42,8 @@ const Homepage = () => {
         } catch (error) {
             console.error('Password reset failed:', error)
             toast.error('Password reset failed')
+        }finally{
+            setIsSubmitting(false)
         }
     }
     
@@ -53,12 +59,9 @@ const Homepage = () => {
                 <PaaswordBox label={"Enter your confirm password here"} password={confirmPassword} setpassword={setConfirmPassword}/>
             </div>
             <div className='w-full flex justify-center mt-6'>
-                <button 
-                    onClick={setResetPassword}
-                    className='button'
-                >
-                    Reset Password
-                </button>
+                <button onClick={setResetPassword} className='button' disabled={isSubmitting}>
+  {isSubmitting ? 'Resetting...' : 'Reset Password'}
+</button>
             </div>
         </div>
     )
